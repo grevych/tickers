@@ -2,11 +2,9 @@ package tickers
 
 // Trie is the main data structure that manages tickers
 type Trie interface {
-	next(*node, rune) *node
-	add(Ticker)
-	GetSize() int
-	LoadTickers([]Ticker)
-	GetTickers(string) []*Ticker
+	Add(Ticker)
+	Size() int
+	Search(string) []Ticker
 }
 
 type trie struct {
@@ -23,63 +21,50 @@ func NewTrie() Trie {
 	}
 }
 
-func (t *trie) add(ticker Ticker) {
+func (t *trie) Add(ticker Ticker) {
 	if ticker.Symbol == "" {
 		return
 	}
 
-	ptr := t.root
-	aux := ptr
-	for _, r := range ticker.Symbol {
-		if !ptr.hasChild(r) {
-			child := newNode()
-			ptr.addChild(r, child)
+	cur := t.root
+	for _, key := range ticker.Symbol {
+		if !cur.hasChild(key) {
+			cur.createChild(key)
 		}
 
-		aux = ptr
-		ptr, _ = ptr.getChild(r)
-		// aux.print()
+		cur, _ = cur.getChild(key)
 	}
 
-	aux.addTicker(&ticker)
-	// aux.print()
-	// fmt.Println("")
+	cur.addTicker(&ticker)
 	t.size++
 }
 
-func (t *trie) next(ptr *node, r rune) *node {
-	if !ptr.hasChild(r) {
-		return nil
-	}
+func (t *trie) Search(input string) []Ticker {
+	cur := t.root
 
-	child, _ := ptr.getChild(r)
-	// child.print()
-
-	return child
-}
-
-func (t *trie) GetTickers(input string) []*Ticker {
-	ptr := t.root
-	aux := ptr
-
-	for _, r := range input {
-		aux = ptr
-		ptr = t.next(ptr, r)
-
-		if ptr == nil {
-			return []*Ticker{}
+	for _, key := range input {
+		if !cur.hasChild(key) {
+			return []Ticker{}
 		}
+
+		cur, _ = cur.getChild(key)
 	}
 
-	return append(aux.tickers, ptr.getChildrenTickers()...)
-}
+	response := cur.getTickers()
+	queue := append([]*node{}, cur.getChildren()...)
+	for len(queue) > 0 {
+		// Pop Front
+		child := queue[0]
+		queue = queue[1:]
 
-func (t *trie) LoadTickers(tickers []Ticker) {
-	for _, tk := range tickers {
-		t.add(tk)
+		response = append(response, child.getTickers()...)
+		// Push Front
+		queue = append(child.getChildren(), queue...)
 	}
+
+	return response
 }
 
-func (t *trie) GetSize() int {
+func (t *trie) Size() int {
 	return t.size
 }

@@ -14,12 +14,12 @@ func newNode() *node {
 	}
 }
 
-func (n *node) addChild(key rune, child *node) error {
+func (n *node) createChild(key rune) error {
 	if _, exists := n.children[key]; exists {
 		return fmt.Errorf("Node error: child %c exists", key)
 	}
 
-	n.children[key] = child
+	n.children[key] = newNode()
 
 	return nil
 }
@@ -44,30 +44,21 @@ func (n *node) addTicker(ticker *Ticker) {
 	n.tickers = append(n.tickers, ticker)
 }
 
-func (n *node) getTickers() []*Ticker {
-	return n.tickers
-}
-
-func (n *node) getChildrenTickers() []*Ticker {
-	childrenTickers := append([]*Ticker{}, n.tickers...)
-
-	for _, child := range n.children {
-		childrenTickers = append(childrenTickers, child.getChildrenTickers()...)
-	}
-
-	return childrenTickers
-}
-
-func (n *node) print() {
-	keys := []string{}
-	for key, _ := range n.children {
-		keys = append(keys, string(key))
-	}
-
+func (n *node) getTickers() []Ticker {
 	tickers := []Ticker{}
-	for _, t := range n.tickers {
-		tickers = append(tickers, *t)
+	for _, ticker := range n.tickers {
+		tickers = append(tickers, *ticker)
 	}
 
-	fmt.Printf("Keys: %v, Tickers: %v \n", keys, tickers)
+	return tickers
+}
+
+func (n *node) getChildren() []*node {
+	children := []*node{}
+
+	for _, value := range n.children {
+		children = append(children, value)
+	}
+
+	return children
 }
